@@ -146,7 +146,7 @@ app.post('/file_upload', function(req, res) {
 								});
 							}
 						})
-					})
+					}, 5000);
 				});
 				res.write("File Uploaded\n");
 				// res.end();
