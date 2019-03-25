@@ -1,38 +1,26 @@
 
 var express = require('express');
-var fs = require("fs-extra");
-var busboy = require("connect-busboy");
-var path = require("path");
+var bodyParser = require('body-parser');
+// var multer  = require('multer');
 var formidable = require('formidable');
+var fs = require('fs');
 
-
-const curl = new (require('curl-request'))();
-
-// require('revai-node-sdk');
-// use 'RevAiApiClient';
 import {RevAiApiClient} from 'revai-node-sdk';
-// var RevAiApiClient = require('revai-node-sdk');
+
 var accessToken = "02hlKKQfwLqTbHG51G3ADeaEsRBI3N5vvLytQc_5mRkHcf_wfpp_tGa_AIYNfl0WX3_M4Vu5hsw9SKn9AfahXEty-DN2U";
 var client = new RevAiApiClient(accessToken);
-// var client = new (require('revai-node-sdk'))();
 
+
+
+
+// var upload = multer({ dest: 'uploads/'});
 
 var app = express();
-
-var bodyParser = require('body-parser');
-var multer  = require('multer');
-
-app.use(express.static('public'));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(busboy());
-
-// var upload = multer({ dest: '/uploades/'});
 
 app.get('/', function (req, res) {
 	res.sendFile( __dirname + "/" + "index.html" );
 })
-var $REV_ACCESS_TOKEN = '02hlKKQfwLqTbHG51G3ADeaEsRBI3N5vvLytQc_5mRkHcf_wfpp_tGa_AIYNfl0WX3_M4Vu5hsw9SKn9AfahXEty-DN2U';
-//rev.ai access token
+
 app.get('/jobId/:jobid', function(req, res){
 	var jobid = req.params.jobid;
 	var jobDetails = client.getJobDetails(jobid);
@@ -124,35 +112,65 @@ app.get('/file_upload', function(req, res){
 		// })
 	});
 });
-app.post('/file_upload', function (req, res) {
-	/*
-	var form  = new formidable.IncomingForm();
+app.post('/file_upload', function(req, res) {
+	var form = new formidable.IncomingForm();
 	form.parse(req, function(err, fields, files){
 		var oldPath = files.file.path;
-		var newPath = __dirname + '/uploades/' + files.file.name;
-		fs.rename(oldPath, newPath, function(err){
-			if( err) console.log(err);
-
-			res.redirect('back');
-			// res.end();
+		// var newPath = "c://uploads/" + files.file.name;
+		var newPath = __dirname + "/uploads/" + files.file.name;
+		fs.copyFile(oldPath, newPath, (err) => {
+			if( err){
+				console.log(err);
+				res.send("Error occured");
+			} else{
+				fs.unlink(oldPath);
+				res.write("File Uploaded");
+				res.end();
+			}
 		})
-	})
-	*/
-	console.log(__dirname + "/assets/sound/FTC Sample 1 - Single.mp3");
-	var fileJob = client.submitJobLocalFile(__dirname + "/assets/sound/FTC Sample 1 - Single.mp3");
-	console.log(fileJob);
-	res.write(fileJob);
+
+		//  // if drive is differ between old and new, it fails.
+		// fs.rename(oldPath, newPath, function(err){
+		// 	if( err) {
+		// 		console.log(err);
+		// 		// throw err;
+		// 		res.send("Error occured", err);
+		// 	} else{
+		// 		res.write("File Uploaded");
+		// 		res.end();
+		// 	}
+		// })
+	});
+	// res.redirect('back');
+	// var form  = new formidable.IncomingForm();
+	// form.parse(req, function(err, fields, files){
+	// 	var oldPath = files.file.path;
+	// 	var newPath = __dirname + '/uploads/' + files.file.name;
+	// 	fs.rename(oldPath, newPath, function(err){
+	// 		if( err) console.log(err);
+
+	// 		res.redirect('back');
+	// 		// res.end();
+	// 	})
+	// });
+
+	// return;
+	
+	// console.log(__dirname + "/assets/sound/FTC Sample 1 - Single.mp3");
+	// var fileJob = client.submitJobLocalFile(__dirname + "/assets/sound/FTC Sample 1 - Single.mp3");
+	// console.log(fileJob);
+	// res.send(fileJob);
 
 	// var fstream;
 	// req.pipe(req.busboy);
 	// req.busboy.on('file', function(fieldname, file, filename){
 	// 	console.log("Uploading:" + filename);
-	// 	fstream = fs.createWriteStream(__dirname + '/uploades/' + filename);
+	// 	fstream = fs.createWriteStream(__dirname + '/uploads/' + filename);
 	// 	file.pipe(fstream);
 	// 	fstream.on('close', function(){
 	// 		console.log("Uploading finished.");
 	// 		// var urlJob = await client.submit("https://www.rev.ai/FTC_Sample_1.mp3");
-	// 		var fileJob = client.submitJobLocalFile("/uploades/" + filename);
+	// 		var fileJob = client.submitJobLocalFile("/uploads/" + filename);
 	// 		console.log(fileJob);
 	// 		res.redirect('back');
 	// 	})
@@ -165,8 +183,3 @@ var server = app.listen(8081, function () {
    
    console.log("Example app listening at http://%s:%s", host, port)
 })
-
-//curl -X POST "https://api.rev.ai/speechtotext/v1/jobs"
-// -H "Authorization: Bearer $REV_ACCESS_TOKEN"
-// -H "Content-Type: application/json" 
-// -d "{\"media_url\":\"https://support.rev.com/hc/en-us/article_attachments/200043975/FTC_Sample_1_-_Single.mp3\",\"metadata\":\"This is a sample submit jobs option\"}"
