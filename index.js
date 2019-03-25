@@ -124,57 +124,36 @@ app.post('/file_upload', function(req, res) {
 				res.send("Error occured");
 			} else{
 				fs.unlink(oldPath);
-				res.write("File Uploaded");
-				res.end();
+				var localJob = client.submitJobLocalFile(newPath);
+				localJob.then(function(result){
+					var interval = setInterval(function(){
+						var jobDetails = client.getJobDetails(result.id);
+						jobDetails.then(function(details){
+							if( details.status.toLowerCase() == 'transcribed'){
+								clearInterval(interval);
+								var transcriptObj = client.getTranscriptObject(details.id);
+								transcriptObj.then( function(data){
+									for( var i = 0; i < data.monologues.length; i++){
+										var curMono = data.monologues[i];
+										var strText = "";
+										for( var j = 0; j < curMono.elements.length; j++){
+											var curEle = curMono.elements[j];
+											strText += curEle.value;
+										}
+										res.write(strText + "\n\n");
+									}
+									res.end();
+								});
+							}
+						})
+					})
+				});
+				res.write("File Uploaded\n");
+				// res.end();
 			}
 		})
 
-		//  // if drive is differ between old and new, it fails.
-		// fs.rename(oldPath, newPath, function(err){
-		// 	if( err) {
-		// 		console.log(err);
-		// 		// throw err;
-		// 		res.send("Error occured", err);
-		// 	} else{
-		// 		res.write("File Uploaded");
-		// 		res.end();
-		// 	}
-		// })
 	});
-	// res.redirect('back');
-	// var form  = new formidable.IncomingForm();
-	// form.parse(req, function(err, fields, files){
-	// 	var oldPath = files.file.path;
-	// 	var newPath = __dirname + '/uploads/' + files.file.name;
-	// 	fs.rename(oldPath, newPath, function(err){
-	// 		if( err) console.log(err);
-
-	// 		res.redirect('back');
-	// 		// res.end();
-	// 	})
-	// });
-
-	// return;
-	
-	// console.log(__dirname + "/assets/sound/FTC Sample 1 - Single.mp3");
-	// var fileJob = client.submitJobLocalFile(__dirname + "/assets/sound/FTC Sample 1 - Single.mp3");
-	// console.log(fileJob);
-	// res.send(fileJob);
-
-	// var fstream;
-	// req.pipe(req.busboy);
-	// req.busboy.on('file', function(fieldname, file, filename){
-	// 	console.log("Uploading:" + filename);
-	// 	fstream = fs.createWriteStream(__dirname + '/uploads/' + filename);
-	// 	file.pipe(fstream);
-	// 	fstream.on('close', function(){
-	// 		console.log("Uploading finished.");
-	// 		// var urlJob = await client.submit("https://www.rev.ai/FTC_Sample_1.mp3");
-	// 		var fileJob = client.submitJobLocalFile("/uploads/" + filename);
-	// 		console.log(fileJob);
-	// 		res.redirect('back');
-	// 	})
-	// });
 })
 
 var server = app.listen(8081, function () {
