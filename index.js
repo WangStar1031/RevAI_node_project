@@ -33,6 +33,55 @@ app.get('/', function (req, res) {
 })
 var $REV_ACCESS_TOKEN = '02hlKKQfwLqTbHG51G3ADeaEsRBI3N5vvLytQc_5mRkHcf_wfpp_tGa_AIYNfl0WX3_M4Vu5hsw9SKn9AfahXEty-DN2U';
 //rev.ai access token
+app.get('/jobId/:jobid', function(req, res){
+	var jobid = req.params.jobid;
+	var jobDetails = client.getJobDetails(jobid);
+	jobDetails.then(function(details){
+		if( details.status == 'transcribed'){
+			// var transcriptText = client.getTranscriptText(details.id);
+			// transcriptText.then(function(data){
+			// 	console.log("transcriptText");
+			// 	console.log(data);
+			// 	res.send(data);
+			// });
+
+			var transcriptObj = client.getTranscriptObject(details.id);
+			transcriptObj.then(function(data){
+				// res.send(data);
+				console.log("transcriptObj");
+				console.log(data);
+				for( var i = 0; i < data.monologues.length; i++){
+					var curMono = data.monologues[i];
+					var strText = "";
+					for( var j = 0; j < curMono.elements.length; j++){
+						var curEle = curMono.elements[j];
+						strText += curEle.value;
+					}
+					res.write(strText);
+					res.write('\n\n');
+				}
+				res.end();
+			});
+		} else{
+			res.send(details.status);
+		}
+	});
+	// res.send(req.params);
+})
+app.get('/allJobs', function(req, res){
+	var jobs = client.getListOfJobs(undefined, undefined);
+	jobs.then(function(data){
+		// console.log(data);
+		for( var i = 0; i < data.length; i++){
+			var curData = data[i];
+			console.log( curData.id);
+			var strHtml = '<p><a target="_blank" href="/jobId/' + curData.id + '">' + curData.id + '</a>' + '<b>' + curData.media_url + '</b>' + curData.status + '</p>';
+			res.write(strHtml);
+			// res.write(curData.id + '\n');
+		}
+		res.end();
+	});
+});
 app.get('/file_upload', function(req, res){
 	var urlJob = client.submitJobUrl("https://www.rev.ai/FTC_Sample_1.mp3");
 	console.log(urlJob);
