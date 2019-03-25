@@ -1,0 +1,1 @@
+nodemon --exec babel-node --presets env index.js
